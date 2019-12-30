@@ -171,11 +171,7 @@ func (d *Driver) Get(id string, options graphdriver.MountOpts) (string, error) {
 	d.locker.Lock(id)
 	defer d.locker.Unlock(id)
 	if d.DeviceSet.fakeMount {
-		info, err := d.lookupDevice(id)
-		if err != nil {
-			return "", nil
-		}
-		return info.DevName(), nil
+		return d.DeviceSet.ActiveDevice(id)
 
 	}
 	mp := path.Join(d.home, "mnt", id)
@@ -229,7 +225,7 @@ func (d *Driver) Get(id string, options graphdriver.MountOpts) (string, error) {
 // Put unmounts a device and removes it.
 func (d *Driver) Put(id string) error {
 	if d.DeviceSet.fakeMount {
-		return nil
+		return d.DeviceSet.DeactiveDevice(id)
 	}
 	d.locker.Lock(id)
 	defer d.locker.Unlock(id)

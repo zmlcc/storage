@@ -2449,6 +2449,49 @@ func (devices *DeviceSet) UnmountDevice(hash, mountPath string) error {
 	return devices.deactivateDevice(info)
 }
 
+// ActiveDevice actives the device if needed.
+func (devices *DeviceSet) ActiveDevice(hash string) (string, error) {
+	info, err := devices.lookupDeviceWithLock(hash)
+	if err != nil {
+		return "", err
+	}
+
+	if info.Deleted {
+		return "", fmt.Errorf("devmapper: Can't mount device %v as it has been marked for deferred deletion", info.Hash)
+	}
+
+	info.lock.Lock()
+	defer info.lock.Unlock()
+
+	devices.Lock()
+	defer devices.Unlock()
+
+	if err := devices.activateDeviceIfNeeded(info, false); err != nil {
+		return "", fmt.Errorf("devmapper: Error activating devmapper device for '%s': %s", hash, err)
+	}
+
+	return info.DevName(), nil
+}
+
+// DeactiveDevice deactives the device and removes it from hash.
+func (devices *DeviceSet) DeactiveDevice(hash string) error {
+	logrus.Debugf("devmapper: DeactiveDevice START(hash=%s)", hash)
+	defer logrus.Debugf("devmapper: DeactiveDevice END(hash=%s)", hash)
+
+	info, err := devices.lookupDeviceWithLock(hash)
+	if err != nil {
+		return err
+	}
+
+	info.lock.Lock()
+	defer info.lock.Unlock()
+
+	devices.Lock()
+	defer devices.Unlock()
+
+	return devices.deactivateDevice(info)
+}
+
 // HasDevice returns true if the device metadata exists.
 func (devices *DeviceSet) HasDevice(hash string) bool {
 	info, _ := devices.lookupDeviceWithLock(hash)
