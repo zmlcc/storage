@@ -9,7 +9,7 @@ import (
 	"path"
 	"strconv"
 
-	"github.com/containers/storage/drivers"
+	graphdriver "github.com/containers/storage/drivers"
 	"github.com/containers/storage/pkg/devicemapper"
 	"github.com/containers/storage/pkg/idtools"
 	"github.com/containers/storage/pkg/locker"
@@ -170,6 +170,14 @@ func (d *Driver) Remove(id string) error {
 func (d *Driver) Get(id string, options graphdriver.MountOpts) (string, error) {
 	d.locker.Lock(id)
 	defer d.locker.Unlock(id)
+	if d.DeviceSet.fakeMount {
+		info, err := d.lookupDevice(id)
+		if err != nil {
+			return "", nil
+		}
+		return info.DevName(), nil
+
+	}
 	mp := path.Join(d.home, "mnt", id)
 	rootFs := path.Join(mp, "rootfs")
 	if count := d.ctr.Increment(mp); count > 1 {
@@ -220,6 +228,9 @@ func (d *Driver) Get(id string, options graphdriver.MountOpts) (string, error) {
 
 // Put unmounts a device and removes it.
 func (d *Driver) Put(id string) error {
+	if d.DeviceSet.fakeMount {
+		return nil
+	}
 	d.locker.Lock(id)
 	defer d.locker.Unlock(id)
 	mp := path.Join(d.home, "mnt", id)

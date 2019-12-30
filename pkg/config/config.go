@@ -66,6 +66,9 @@ type ThinpoolOptionsConfig struct {
 	// retries XFS should attempt to complete IO when ENOSPC (no space)
 	// error is returned by underlying storage device.
 	XfsNoSpaceMaxRetries string `toml:"xfs_nospace_max_retries"`
+
+	// Whether mounts the thin devices
+	FakeMount bool `toml:"fake_mount"`
 }
 
 type AufsOptionsConfig struct {
@@ -218,6 +221,9 @@ func GetGraphDriverOptions(driverName string, options OptionsConfig) []string {
 			doptions = append(doptions, fmt.Sprintf("%s.mountopt=%s", driverName, options.Thinpool.MountOpt))
 		} else if options.MountOpt != "" {
 			doptions = append(doptions, fmt.Sprintf("%s.mountopt=%s", driverName, options.MountOpt))
+		}
+		if options.Thinpool.FakeMount != false {
+			doptions = append(doptions, "dm.fake_mount=true")
 		}
 
 		if options.Thinpool.Size != "" {

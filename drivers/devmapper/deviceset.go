@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/containers/storage/drivers"
+	graphdriver "github.com/containers/storage/drivers"
 	"github.com/containers/storage/pkg/devicemapper"
 	"github.com/containers/storage/pkg/dmesg"
 	"github.com/containers/storage/pkg/idtools"
@@ -121,6 +121,7 @@ type DeviceSet struct {
 	minFreeSpacePercent   uint32 //min free space percentage in thinpool
 	xfsNospaceRetries     string // max retries when xfs receives ENOSPC
 	lvmSetupConfig        directLVMConfig
+	fakeMount             bool
 }
 
 // DiskUsage contains information about disk usage and is used when reporting Status of a device.
@@ -2701,6 +2702,8 @@ func NewDeviceSet(root string, doInit bool, options []string, uidMaps, gidMaps [
 			devices.mkfsArgs = append(devices.mkfsArgs, val)
 		case "dm.mountopt", "devicemapper.mountopt":
 			devices.mountOptions = joinMountOptions(devices.mountOptions, val)
+		case "dm.fake_mount":
+			devices.fakeMount = true
 		case "dm.metadatadev":
 			devices.metadataDevice = val
 		case "dm.datadev":
